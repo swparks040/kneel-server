@@ -23,8 +23,8 @@ class HandleRequests(BaseHTTPRequestHandler):
 
     def parse_url(self, path):
         # Just like splitting a string in JavaScript. If the
-        # path is "/animals/1", the resulting list will
-        # have "" at index 0, "animals" at index 1, and "1"
+        # path is "/metals/1", the resulting list will
+        # have "" at index 0, "metals" at index 1, and "1"
         # at index 2.
         path_params = path.split("/")
         resource = path_params[1]
@@ -36,9 +36,9 @@ class HandleRequests(BaseHTTPRequestHandler):
             # This is the new parseInt()
             id = int(path_params[2])
         except IndexError:
-            pass  # No route parameter exists: /animals
+            pass  # No route parameter exists: /metals
         except ValueError:
-            pass  # Request had trailing slash: /animals/
+            pass  # Request had trailing slash: /metals/
 
         return (resource, id)  # This is a tuple
 
@@ -59,6 +59,7 @@ class HandleRequests(BaseHTTPRequestHandler):
                         "message": "That metal is not currently in stock for jewelry."
                     }
             else:
+                self._set_headers(200)
                 response = get_all_metals()
         elif resource == "orders":
             if id is not None:
@@ -71,6 +72,7 @@ class HandleRequests(BaseHTTPRequestHandler):
                         "message": "That order was never placed, or was cancelled."
                     }
             else:
+                self._set_headers(200)
                 response = get_all_orders()
         elif resource == "sizes":
             if id is not None:
@@ -81,6 +83,7 @@ class HandleRequests(BaseHTTPRequestHandler):
                     self._set_headers(404)
                     response = {"message": "That size is not available."}
             else:
+                self._set_headers(200)
                 response = get_all_sizes()
         elif resource == "styles":
             if id is not None:
@@ -91,6 +94,7 @@ class HandleRequests(BaseHTTPRequestHandler):
                     self._set_headers(404)
                     response = {"message": "That style is not available."}
             else:
+                self._set_headers(200)
                 response = get_all_styles()
 
         self.wfile.write(json.dumps(response).encode())

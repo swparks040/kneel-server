@@ -1,4 +1,4 @@
-from .metal import Metal
+from .metal import Metals
 from .order import Order
-from .size import Size
-from .style import Style
+from .size import Sizes
+from .style import Styles

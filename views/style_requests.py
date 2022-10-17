@@ -1,3 +1,6 @@
+import json
+import sqlite3
+from modules import Styles
 STYLES = [
         { "id": 1, "style": "Classic", "price": 500 },
         { "id": 2, "style": "Modern", "price": 710 },
@@ -5,7 +8,35 @@ STYLES = [
 ]
 
 def get_all_styles():
-    return STYLES
+    # Open a connection to the database
+    with sqlite3.connect("./kneeldiamonds.sqlite3") as conn:
+        # Just use these. It's a Black Box.
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
+        # Write the SQL query to get the information you want
+        db_cursor.execute(
+            """
+        SELECT
+            st.id,
+            st.style,
+            st.price
+        FROM styles st
+        """
+        )
+        # Initialize an empty list to hold all style representations
+        styles = []
+        # Convert rows of data into a Python list
+        dataset = db_cursor.fetchall()
+        # Iterate list of data returned from database
+        for row in dataset:
+            # Create a style instance from the current row.
+            # Note that the database fields are specified in
+            # exact order of the parameters defined in the
+            # style class above.
+            style = Styles(row["id"], row["style"], row["price"])
+            styles.append(style.__dict__)
+ 
+    return styles
 def get_single_style(id):
     # Variable to hold the found style, if it exists
     requested_style = None
