@@ -40,17 +40,33 @@ def get_all_sizes():
  
     return sizes
 def get_single_size(id):
-    # Variable to hold the found size, if it exists
-    requested_size = None
+    with sqlite3.connect("./kneeldiamonds.sqlite3") as conn:
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
+        # Use a ? parameter to inject a variable's value
+        # into the SQL statement.
+        db_cursor.execute(
+            """
+        SELECT
+            si.id,
+            si.carats,
+            si.price
+        FROM Sizes si
+        WHERE si.id = ?
+        """,
+            (id,),
+        )
 
-    # Iterate the SIZES list above. Very similar to the
-    # for..of loops you used in JavaScript.
-    for size in SIZES:
-        # Dictionaries in Python use [] notation to find a key
-        # instead of the dot notation that JavaScript used.
-        if size["id"] == id:
-            requested_size = size
-    return requested_size
+        # Load the single result into memory
+        data = db_cursor.fetchone()
+
+        # Create an metal instance from the current row
+        size = Sizes(
+            data['id'],
+            data['carats'],
+            data['price'],
+        )
+        return size.__dict__
 def create_size(size):
     # Get the id value of the last size in the list
     max_id = SIZES[-1]["id"]
@@ -82,10 +98,23 @@ def delete_size(id):
         SIZES.pop(size_index)
 
 def update_size(id, new_size):
-    # Iterate the sizeS list, but use enumerate() so that
-    # you can access the index value of each item.
-    for index, size in enumerate(SIZES):
-        if size["id"] == id:
-            # Found the size. Update the value.
-            SIZES[index] = new_size
-            break
+    with sqlite3.connect("./kneeldiamonds.sqlite3") as conn:
+        db_cursor = conn.cursor()
+        db_cursor.execute("""
+        UPDATE Sizes
+            SET
+                carats = ?,
+                price = ?
+        WHERE id = ?
+        """, (new_size['carats'], new_size['price'], id, ))
+
+        # Were any rows affected?
+        # Did the client send an `id` that exists?
+        rows_affected = db_cursor.rowcount
+
+    if rows_affected == 0:
+        # Forces 404 response by main module
+        return False
+    else:
+        # Forces 204 response by main module
+        return True

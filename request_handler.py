@@ -101,7 +101,7 @@ class HandleRequests(BaseHTTPRequestHandler):
 
     def do_POST(self):
         # set server response
-        self._set_headers(201)
+        # self._set_headers(201)
         content_len = int(self.headers.get("content-length", 0))
         post_body = self.rfile.read(content_len)
         # JSON to Python
@@ -126,17 +126,16 @@ class HandleRequests(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps(new_metal).encode())
         if resource == "orders":
             if (
-                "order" in post_body
-                and "metalId" in post_body
-                and "sizeId" in post_body
-                and "styleId" in post_body
+                "metal_id" in post_body
+                and "size_id" in post_body
+                and "style_id" in post_body
             ):
                 self._set_headers(201)
                 new_order = create_order(post_body)
             else:
                 self._set_headers(400)
                 new_order = {
-                    "message": f'{"order is required" if "order" not in post_body else ""} {"metalId is required" if "metalId" not in post_body else ""} {"sizeId is required" if "sizeId" not in post_body else ""} {"styleId is required" if "styleId" not in post_body else ""}'
+                    "message": f'{"metal_id is required" if "metal_id" not in post_body else ""} {"size_id is required" if "size_id" not in post_body else ""} {"style_id is required" if "style_id" not in post_body else ""}'
                 }
             self.wfile.write(json.dumps(new_order).encode())
         if resource == "sizes":
@@ -168,19 +167,21 @@ class HandleRequests(BaseHTTPRequestHandler):
         post_body = self.rfile.read(content_len)
         post_body = json.loads(post_body)
         (resource, id) = self.parse_url(self.path)
+        success = False
         # Delete a single metal from the list
         if resource == "metals":
-            update_metal(id, post_body)
-            self._set_headers(204)
+            success = update_metal(id, post_body)
+        elif resource == "sizes":
+            success = update_size(id, post_body)
+        elif resource == "styles":
+            success = update_style(id, post_body)
         elif resource == "orders":
             response = {"message": "Unable to update order."}
             self._set_headers(405)
-        elif resource == "sizes":
-            update_size(id, post_body)
+        if success:
             self._set_headers(204)
-        elif resource == "styles":
-            update_style(id, post_body)
-            self._set_headers(204)
+        else:
+            self._set_headers(404)
         self.wfile.write(json.dumps(response).encode())
 
     def _set_headers(self, status):

@@ -38,17 +38,34 @@ def get_all_styles():
  
     return styles
 def get_single_style(id):
-    # Variable to hold the found style, if it exists
-    requested_style = None
+    with sqlite3.connect("./kneeldiamonds.sqlite3") as conn:
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
+        # Use a ? parameter to inject a variable's value
+        # into the SQL statement.
+        db_cursor.execute(
+            """
+        SELECT
+            st.id,
+            st.style,
+            st.price
+        FROM Styles st
+        WHERE st.id = ?
+        """,
+            (id,),
+        )
 
-    # Iterate the STYLES list above. Very similar to the
-    # for..of loops you used in JavaScript.
-    for style in STYLES:
-        # Dictionaries in Python use [] notation to find a key
-        # instead of the dot notation that JavaScript used.
-        if style["id"] == id:
-            requested_style = style
-    return requested_style
+        # Load the single result into memory
+        data = db_cursor.fetchone()
+
+        # Create a style instance from the current row
+        style = Styles(
+            data['id'],
+            data['style'],
+            data['price'],
+        )
+        return style.__dict__
+
 def create_style(style):
     # Get the id value of the last style in the list
     max_id = STYLES[-1]["id"]
@@ -80,10 +97,23 @@ def delete_style(id):
         STYLES.pop(style_index)
 
 def update_style(id, new_style):
-    # Iterate the styleS list, but use enumerate() so that
-    # you can access the index value of each item.
-    for index, style in enumerate(STYLES):
-        if style["id"] == id:
-            # Found the style. Update the value.
-            STYLES[index] = new_style
-            break
+    with sqlite3.connect("./kneeldiamonds.sqlite3") as conn:
+        db_cursor = conn.cursor()
+        db_cursor.execute("""
+        UPDATE Styles
+            SET
+                style = ?,
+                price = ?
+        WHERE id = ?
+        """, (new_style['style'], new_style['price'], id, ))
+
+        # Were any rows affected?
+        # Did the client send an `id` that exists?
+        rows_affected = db_cursor.rowcount
+
+    if rows_affected == 0:
+        # Forces 404 response by main module
+        return False
+    else:
+        # Forces 204 response by main module
+        return True
